@@ -294,12 +294,12 @@ const FormPage = () => {
             )}
           </div>
 
-          <button
+          {/* <button
               onClick={() => navigate('/')}
               className="flex items-center gap-4 px-8 py-4 bg-gradient-to-r from-amber-600 to-amber-400 rounded-lg text-black text-xl font-semibold hover:from-amber-500 hover:to-amber-300 transition-all duration-300"
             >
               Home Page
-            </button>
+            </button> */}
 
           {/* <button
             type="submit"
@@ -312,6 +312,12 @@ const FormPage = () => {
             className="w-full px-12 py-6 bg-gradient-to-r from-amber-600 to-amber-400 rounded-lg text-black text-3xl font-semibold hover:from-amber-500 hover:to-amber-300 transition-all duration-300"
           >
             Download Photo
+          </button>
+          <button
+            onClick={() => navigate('/')}
+            className="w-full px-12 py-6 bg-gradient-to-r from-amber-600 to-amber-400 rounded-lg text-black text-3xl font-semibold hover:from-amber-500 hover:to-amber-300 transition-all duration-300"
+          >
+            Home
           </button>
         </form>
 

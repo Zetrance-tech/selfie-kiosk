@@ -122,25 +122,29 @@ const PhotoPage = () => {
         watermark.src = '/images/udb.png'; // Ensure this path is correct
 
         watermark.onload = () => {
-          // Define watermark size (50% of canvas width, maintain aspect ratio)
-          const watermarkWidth = canvas.width * 0.5; // Increased size
-          const watermarkHeight =
-            (watermark.height / watermark.width) * watermarkWidth;
-          const padding = 20; // Padding from bottom edge
+          // Scale watermark to fit canvas while preserving aspect ratio
+          let watermarkWidth = canvas.width;
+          let watermarkHeight = (watermark.height / watermark.width) * watermarkWidth;
+          
+          // If watermark height exceeds canvas height, scale based on height instead
+          if (watermarkHeight > canvas.height) {
+            watermarkHeight = canvas.height;
+            watermarkWidth = (watermark.width / watermark.height) * watermarkHeight;
+          }
+
+          // Position watermark to cover the entire canvas (top-left after transformations)
+          const watermarkX = (canvas.width - watermarkWidth) / 2;
+          const watermarkY = (canvas.height - watermarkHeight) / 2;
 
           // Save context for watermark transformations
           context.save();
 
-          // Apply 180deg rotation to align with displayed image
+          // Apply transformations to align with displayed image
           context.translate(canvas.width / 2, canvas.height / 2);
-          context.rotate(180 * Math.PI / 180);
+          context.rotate(180 * Math.PI / 180); // Align with displayed image rotation
           context.translate(-canvas.width / 2, -canvas.height / 2);
 
-          // Calculate watermark position (center at bottom)
-          const watermarkX = (canvas.width - watermarkWidth) / 2; // Centered horizontally
-          const watermarkY = canvas.height - watermarkHeight - padding; // Bottom with padding
-
-          // Apply -90deg rotation for watermark
+          // Apply -90deg rotation for watermark to match orientation
           context.translate(watermarkX + watermarkWidth / 2, watermarkY + watermarkHeight / 2);
           context.rotate(-90 * Math.PI / 180);
           context.translate(-watermarkWidth / 2, -watermarkHeight / 2);
@@ -176,9 +180,9 @@ const PhotoPage = () => {
           context.fillStyle = 'rgba(255, 255, 255, 0.7)';
           context.textAlign = 'center';
 
-          // Apply -90deg rotation for text
+          // Apply -90deg rotation for text, centered
           const textX = canvas.width / 2;
-          const textY = canvas.height - 40;
+          const textY = canvas.height / 2;
           context.translate(textX, textY);
           context.rotate(-90 * Math.PI / 180);
           context.fillText(text, 0, 0);
