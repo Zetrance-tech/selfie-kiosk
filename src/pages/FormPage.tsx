@@ -308,7 +308,7 @@ const FormPage = () => {
             Download Photo
           </button> */}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/download')}
             className="w-full px-12 py-6 bg-gradient-to-r from-amber-600 to-amber-400 rounded-lg text-black text-3xl font-semibold hover:from-amber-500 hover:to-amber-300 transition-all duration-300"
           >
             Download Photo

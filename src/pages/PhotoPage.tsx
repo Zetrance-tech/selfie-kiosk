@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Camera, Home, RefreshCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { v4 as uuidv4 } from 'uuid';
+import QRCode from 'qrcode.react';
 
 // In-memory storage for temporary photo data (FRONTEND ONLY)
 const photoStorage = new Map<string, string>();
@@ -25,6 +26,7 @@ const PhotoPage = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [photoId, setPhotoId] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [showQRCode, setShowQRCode] = useState<boolean>(false); // State for QR code modal
   const navigate = useNavigate();
 
   // Request access to the webcam
@@ -50,6 +52,14 @@ const PhotoPage = () => {
     };
 
     startVideoStream();
+
+    // Cleanup stream on component unmount
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
   }, []);
 
   const startCountdown = () => {
@@ -106,7 +116,6 @@ const PhotoPage = () => {
 
         // Apply transformations to match video feed orientation
         if (isPortrait) {
-          // Rotate and translate to match -90deg video feed
           context.translate(canvas.width, 0);
           context.rotate(90 * Math.PI / 180);
           context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
@@ -119,41 +128,34 @@ const PhotoPage = () => {
 
         // Load and draw the watermark
         const watermark = new Image();
-        watermark.src = '/images/udb.png'; // Ensure this path is correct
+        watermark.src = '/images/udb.png';
 
         watermark.onload = () => {
           // Scale watermark to fit canvas while preserving aspect ratio
           let watermarkWidth = canvas.width;
           let watermarkHeight = (watermark.height / watermark.width) * watermarkWidth;
-          
-          // If watermark height exceeds canvas height, scale based on height instead
+
           if (watermarkHeight > canvas.height) {
             watermarkHeight = canvas.height;
             watermarkWidth = (watermark.width / watermark.height) * watermarkHeight;
           }
 
-          // Position watermark to cover the entire canvas (top-left after transformations)
+          // Position watermark to cover the entire canvas
           const watermarkX = (canvas.width - watermarkWidth) / 2;
           const watermarkY = (canvas.height - watermarkHeight) / 2;
 
-          // Save context for watermark transformations
           context.save();
-
-          // Apply transformations to align with displayed image
           context.translate(canvas.width / 2, canvas.height / 2);
-          context.rotate(180 * Math.PI / 180); // Align with displayed image rotation
+          context.rotate(180 * Math.PI / 180);
           context.translate(-canvas.width / 2, -canvas.height / 2);
 
-          // Apply -90deg rotation for watermark to match orientation
           context.translate(watermarkX + watermarkWidth / 2, watermarkY + watermarkHeight / 2);
           context.rotate(-90 * Math.PI / 180);
           context.translate(-watermarkWidth / 2, -watermarkHeight / 2);
 
-          // Set opacity for watermark
-          context.globalAlpha = 0.7; // Semi-transparent
+          context.globalAlpha = 0.7;
           context.drawImage(watermark, 0, 0, watermarkWidth, watermarkHeight);
-          context.globalAlpha = 1.0; // Reset opacity
-
+          context.globalAlpha = 1.0;
           context.restore();
 
           // Generate the image data URL
@@ -169,7 +171,6 @@ const PhotoPage = () => {
           console.error('Failed to load watermark at:', watermark.src);
           toast.error('Failed to load watermark. Using fallback.');
 
-          // Fallback: Draw text watermark
           context.save();
           context.translate(canvas.width / 2, canvas.height / 2);
           context.rotate(180 * Math.PI / 180);
@@ -180,7 +181,6 @@ const PhotoPage = () => {
           context.fillStyle = 'rgba(255, 255, 255, 0.7)';
           context.textAlign = 'center';
 
-          // Apply -90deg rotation for text, centered
           const textX = canvas.width / 2;
           const textY = canvas.height / 2;
           context.translate(textX, textY);
@@ -199,6 +199,18 @@ const PhotoPage = () => {
       }
     }
   }, []);
+
+  // Generate a downloadable URL for the QR code
+  const getDownloadUrl = () => {
+    if (photoId) {
+      const imageSrc = getPhoto(photoId);
+      if (imageSrc) {
+        // Using data URL for simplicity; ideally, use a backend-provided URL
+        return imageSrc;
+      }
+    }
+    return '';
+  };
 
   return (
     <div
@@ -228,7 +240,7 @@ const PhotoPage = () => {
                     maxWidth: '100%',
                     maxHeight: '90vh',
                     objectFit: 'cover',
-                    transform: 'scaleX(1) rotate(-90deg)', // Original orientation
+                    transform: 'scaleX(1) rotate(-90deg)',
                     transformOrigin: 'center',
                   }}
                 />
@@ -260,14 +272,15 @@ const PhotoPage = () => {
                 <img
                   src={getPhoto(photoId)}
                   alt="Captured Thumbnail"
-                  className="w-full rounded-lg"
+                  className="w-full rounded-lg cursor-pointer"
                   style={{
                     maxHeight: '60vh',
                     objectFit: 'contain',
-                    transform: 'rotate(180deg)', // Original display rotation
+                    transform: 'rotate(180deg)',
                     width: '100%',
                     height: 'auto',
                   }}
+                  onClick={() => setShowQRCode(true)} // Show QR code on click
                 />
               </div>
 
@@ -291,7 +304,6 @@ const PhotoPage = () => {
                   <RefreshCcw className="w-6 h-6" />
                   Retake
                 </button>
-
                 <button
                   onClick={() => {
                     navigate('/form');
@@ -306,6 +318,28 @@ const PhotoPage = () => {
         </div>
       </div>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+      {/* QR Code Modal */}
+      {showQRCode && photoId && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg flex flex-col items-center relative">
+            <h2 className="text-2xl font-semibold mb-4 text-black">Scan to Download</h2>
+            <QRCode
+              value={getDownloadUrl()}
+              size={256}
+              level="H"
+              includeMargin={true}
+            />
+            <p className="mt-4 text-gray-600">Scan the QR code to download your photo.</p>
+            <button
+              onClick={() => setShowQRCode(false)}
+              className="mt-6 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-500 transition-all duration-300"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -15,7 +15,7 @@ import React from 'react';
               <Route path="/" element={<HomePage />} />
               <Route path="/photo" element={<PhotoPage />} />
               <Route path="/form" element={<FormPage />} />
-              <Route path="/download/:id" element={<DownloadPage />} />
+              <Route path="/download" element={<DownloadPage />} />
             </Routes>
           </div>
         </BrowserRouter>
