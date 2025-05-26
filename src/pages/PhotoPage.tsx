@@ -150,7 +150,7 @@ const PhotoPage = () => {
           context.translate(-canvas.width / 2, -canvas.height / 2);
 
           context.translate(watermarkX + watermarkWidth / 2, watermarkY + watermarkHeight / 2);
-          context.rotate(-90 * Math.PI / 180);
+          context.rotate(0 * Math.PI / 180); // Changed from -90 to 0 (90 degrees clockwise from previous state)
           context.translate(-watermarkWidth / 2, -watermarkHeight / 2);
 
           context.globalAlpha = 0.7;
