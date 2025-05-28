@@ -123,7 +123,23 @@ const PhotoPage = () => {
           context.drawImage(video, 0, 0, canvas.width, canvas.height);
         }
 
-        // Restore context to remove rotation for watermark
+        // Restore context to remove rotation for watermark and footer
+        context.restore();
+
+        // Add translucent dark blue footer background
+        const footerHeight = canvas.height * 0.15; // 15% of canvas height
+        context.save();
+        context.translate(canvas.width / 2, canvas.height / 2);
+        context.rotate(180 * Math.PI / 180);
+        context.translate(-canvas.width / 2, -canvas.height / 2);
+        
+        // Create gradient for footer background
+        const gradient = context.createLinearGradient(0, canvas.height - footerHeight, 0, canvas.height);
+        gradient.addColorStop(0, 'rgba(30, 64, 124, 0.3)'); // Lighter at top
+        gradient.addColorStop(1, 'rgba(30, 64, 124, 0.8)'); // Darker at bottom
+        
+        context.fillStyle = gradient;
+        context.fillRect(0, canvas.height - footerHeight, canvas.width, footerHeight);
         context.restore();
 
         // Load and draw the watermark
